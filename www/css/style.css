@@ -1009,3 +1009,39 @@ body {
     align-items: flex-start;
   }
 }
+
+/* === 记忆辅助弹窗列表 === */
+.memory-aids-list {
+  padding: 4px 0;
+}
+
+.memory-aid-item {
+  background: #F0F4FF;
+  border: 1px solid #D6E4FF;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.ma-question {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.ma-answer {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 6px;
+}
+
+.ma-aid {
+  font-size: 14px;
+  color: var(--primary);
+  line-height: 1.6;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary);
+}

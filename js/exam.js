@@ -246,12 +246,19 @@ const Exam = {
    * 提交考试
    */
   async submit() {
+    // 防止重复提交
+    if (this._submitting || (this.examConfig && this.examConfig.submitted)) return;
+    this._submitting = true;
+
     clearInterval(this.timerInterval);
 
     // 检查未答题
     const unanswered = this.userAnswers.filter(a => a === null || a === '').length;
-    if (unanswered > 0 && !this.examConfig.submitted) {
-      if (!confirm(`还有 ${unanswered} 题未答，确定要提交吗？`)) return;
+    if (unanswered > 0) {
+      if (!confirm(`还有 ${unanswered} 题未答，确定要提交吗？`)) {
+        this._submitting = false;
+        return;
+      }
     }
 
     this.examConfig.submitted = true;
@@ -286,10 +293,15 @@ const Exam = {
     // 显示结果
     this.showResult(score, wrongIds);
 
-    // 为错题生成记忆辅助
+    // 为错题生成记忆辅助（等待完成，然后弹窗展示）
     if (wrongIds.length > 0) {
-      this.generateMemoryAids(wrongIds);
+      const results = await this.generateMemoryAids(wrongIds);
+      if (results && results.length > 0) {
+        showExamMemoryAids(results);
+      }
     }
+
+    this._submitting = false;
   },
 
   /**
@@ -323,11 +335,13 @@ const Exam = {
 
   /**
    * 为错题生成记忆辅助（仅首次生成，后续复用缓存）
+   * 返回数组 [{ questionContent, answer, memoryAid, cached }]
    */
   async generateMemoryAids(wrongIds) {
     const apiKey = localStorage.getItem('deepseek_api_key');
-    if (!apiKey) return; // 未配置 API，跳过
+    if (!apiKey) return [];
 
+    const results = [];
     let newCount = 0;
     let skipCount = 0;
 
@@ -339,14 +353,20 @@ const Exam = {
           .first();
         if (!wrong) continue;
 
+        const q = await window.ExamDB.db.questions.get(qId);
+        if (!q) continue;
+
         // 已有记忆辅助 → 直接复用，不再重新生成
         if (wrong.memoryAid && wrong.memoryAid.trim()) {
           skipCount++;
+          results.push({
+            questionContent: q.content,
+            answer: q.answer,
+            memoryAid: wrong.memoryAid.trim(),
+            cached: true
+          });
           continue;
         }
-
-        const q = await window.ExamDB.db.questions.get(qId);
-        if (!q) continue;
 
         const memoryAid = await LLM.generateMemoryAid(
           q.content,
@@ -356,6 +376,12 @@ const Exam = {
 
         await window.ExamDB.updateMemoryAid(wrong.id, memoryAid.trim());
         newCount++;
+        results.push({
+          questionContent: q.content,
+          answer: q.answer,
+          memoryAid: memoryAid.trim(),
+          cached: false
+        });
       } catch (err) {
         console.warn('生成记忆辅助失败：', err.message);
       }
@@ -364,11 +390,13 @@ const Exam = {
     if (newCount > 0) {
       const msg = skipCount > 0
         ? `记忆辅助：${newCount} 道新生成，${skipCount} 道复用已有`
-        : `记忆辅助生成完成！可前往错题本查看。`;
+        : `记忆辅助生成完成！`;
       showToast(msg);
     } else if (skipCount > 0) {
       showToast(`${skipCount} 道错题已有记忆辅助，无需重新生成。`);
     }
+
+    return results;
   },
 
   /**

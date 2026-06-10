@@ -588,3 +588,27 @@ document.addEventListener('change', (e) => {
     loadExamSetup();
   }
 });
+
+// ==================== 考试后记忆辅助弹窗 ====================
+
+/**
+ * 考试提交后，在弹窗中展示所有错题的 AI 记忆辅助
+ * @param {Array} aids - [{ questionContent, answer, memoryAid, cached }]
+ */
+function showExamMemoryAids(aids) {
+  let html = '<div class="memory-aids-list">';
+  aids.forEach((a, i) => {
+    const tag = a.cached ? '' : ' <span style="font-size:11px;background:#4f46e5;color:#fff;padding:1px 6px;border-radius:4px;">新生成</span>';
+    html += `
+      <div class="memory-aid-item">
+        <div class="ma-question">${i + 1}. ${escapeHtml(a.questionContent.substring(0, 60))}${a.questionContent.length > 60 ? '...' : ''}${tag}</div>
+        <div class="ma-answer">✅ 答案：${escapeHtml(a.answer)}</div>
+        <div class="ma-aid">🧠 ${escapeHtml(a.memoryAid).replace(/\n/g, '<br>')}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  document.getElementById('memory-aid-content').innerHTML = html;
+  document.getElementById('dialog-memory-aid').style.display = 'flex';
+}
