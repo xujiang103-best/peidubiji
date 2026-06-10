@@ -122,75 +122,74 @@ const LLM = {
   },
 
   /**
-   * 为错题生成顺口溜记忆辅助
-   * @param {string} question - 题目内容
-   * @param {string} answer - 正确答案
-   * @param {string} explanation - 题目解析（可选）
-   * @returns {Promise<string>} 顺口溜
+   * 系统提示词 — 记忆故事法（打包自 peidu.md）
+   * 原则：越夸张越好记，离谱但知识点不能错
    */
-  async generateMnemonics(question, answer, explanation = '') {
-    const prompt = `你是一位富有经验的中学老师，擅长把知识点编成朗朗上口的顺口溜，帮助学生快速记忆。
+  MEMORY_STORY_SYSTEM_PROMPT: `你是一名擅长"记忆故事法"的初中历史、地理、生物和政治老师。
 
-题目：${question}
-正确答案：${answer}
-${explanation ? `解析：${explanation}` : ''}
+我会给你一道孩子做错的题，请你不要直接讲大道理，而是按下面流程帮孩子记住：
 
-请生成一个易记的顺口溜（押韵口诀），要求：
-1. 不超过4句，每句7-14字
-2. 朗朗上口，押韵自然
-3. 内容准确，紧扣知识点
-4. 适合中学生理解和记忆
-5. 只输出顺口溜内容，不要多余的解释
-
-格式示例：
-"氢氧化钙石灰水，检验二氧化碳味。
-澄清变浑是特征，白色沉淀底部睡。"`;
-
-    return await this.callAPI([
-      { role: 'user', content: prompt }
-    ], { temperature: 0.8, max_tokens: 300 });
-  },
-
-  /**
-   * 为错题生成图像记忆描述
-   * @param {string} question - 题目内容
-   * @param {string} answer - 正确答案
-   * @returns {Promise<string>} 图像记忆描述
-   */
-  async generateImageMemory(question, answer) {
-    const prompt = `请把以下知识点转化为一个生动的形象化记忆方法（图像记忆法），帮助学生通过"脑海画面"来记住答案。
-
-题目：${question}
-正确答案：${answer}
+1. 先判断这道题的考点是什么。
+2. 分析孩子可能为什么会错：是概念混淆、顺序记错、地点记错、因果关系没搞清，还是关键词没有画面。
+3. 把正确答案拆成几个关键词。
+4. 给每个关键词设计一个非常夸张、离谱、好笑、有画面感的角色、动作或场景。
+5. 把这些关键词串成一个短故事，故事要让孩子一听就忘不掉。
+6. 如果有容易混淆的错误答案，要在故事里专门安排一个"被赶走/被拦下/被打脸"的情节，帮助孩子排除错误选项。
+7. 最后输出一句简短口诀，帮助孩子快速回忆。
+8. 再给孩子一个"闭眼复述问题"，让孩子马上回忆这个画面。
 
 要求：
-1. 描述一个具体的、夸张的、容易想象的图像或场景
-2. 图像要和答案有强关联，看到图像就能想起答案
-3. 50-100字，语言生动有趣
-4. 只输出图像记忆描述，不要多余解释
+- 面向初中生，语言要简单、有趣，不要太幼稚。
+- 故事可以夸张，但不能胡编知识点。
+- 每个夸张元素必须和正确答案有明确对应关系。
+- 不要写太长，控制在300字以内。
+- 最后必须回到标准答案。
 
-格式示例：
-"想象一个红色的苹果（代表答案A），苹果上长着三只眼睛（代表三个条件），你一看到三只眼的红苹果，就想起选A！"`;
+必须严格按照以下格式输出，不要添加其他内容：
+
+【考点】
+……
+
+【错因】
+……
+
+【💥 夸张故事】
+……
+
+【🔗 记忆锚点】
+（列出故事中的每个夸张元素和正确答案的对应关系）
+
+【📢 口诀】
+……
+
+【👁️ 闭眼回忆】
+……`,
+
+  /**
+   * 使用「记忆故事法」为错题生成夸张记忆辅助
+   * @param {string} question - 题目内容（含选项）
+   * @param {string} answer - 正确答案
+   * @param {string} explanation - 题目解析（可选）
+   * @returns {Promise<string>} 结构化记忆辅助
+   */
+  async generateExaggeratedStory(question, answer, explanation = '') {
+    const userPrompt = `题目：${question}
+正确答案：${answer}${explanation ? `\n解析：${explanation}` : ''}
+
+请用「记忆故事法」帮孩子记住这道题的正确答案。记住：越夸张越离谱越好，但知识点必须准确！`;
 
     return await this.callAPI([
-      { role: 'user', content: prompt }
-    ], { temperature: 0.8, max_tokens: 300 });
+      { role: 'system', content: this.MEMORY_STORY_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt }
+    ], { temperature: 0.9, max_tokens: 1200 });
   },
 
   /**
-   * 通用：生成记忆辅助（顺口溜 + 图像记忆）
+   * 通用：生成记忆辅助（夸张故事 + 记忆锚点 + 口诀 + 闭眼回忆）
    */
   async generateMemoryAid(question, answer, explanation = '') {
-    const [mnemonics, imageMemory] = await Promise.all([
-      this.generateMnemonics(question, answer, explanation),
-      this.generateImageMemory(question, answer).catch(() => '')
-    ]);
-
-    let result = `📍 顺口溜：\n${mnemonics.trim()}`;
-    if (imageMemory) {
-      result += `\n\n🖼️ 图像记忆：\n${imageMemory.trim()}`;
-    }
-    return result;
+    const result = await this.generateExaggeratedStory(question, answer, explanation);
+    return result.trim();
   }
 };
 

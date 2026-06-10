@@ -315,16 +315,16 @@ async function loadWrongQuestions() {
 }
 
 async function generateMemoryForWrong(wrongId, questionId) {
-  // API Key 可以来自前端 localStorage，也可以来自服务器端 .env，不强制要求前端配置
+  // 记忆故事法：夸张、离谱、好记的 AI 记忆辅助
 
-  showToast('正在生成记忆辅助，请稍候...');
+  showToast('🧠 AI 正在生成夸张记忆故事，请稍候...');
   const q = await window.ExamDB.db.questions.get(questionId);
   if (!q) return;
 
   try {
-    const memoryAid = await LLM.generateMnemonics(q.content, q.answer, q.explanation);
+    const memoryAid = await LLM.generateMemoryAid(q.content, q.answer, q.explanation);
     await window.ExamDB.updateMemoryAid(wrongId, memoryAid.trim());
-    showToast('记忆辅助生成成功！');
+    showToast('🎉 夸张记忆故事生成成功！');
     await loadWrongQuestions();
   } catch (err) {
     console.error('生成记忆辅助失败:', err);
