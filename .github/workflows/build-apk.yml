@@ -1,0 +1,42 @@
+# Android WebView APK 构建工作流
+# 推送到 GitHub 后，进入 Actions 标签下载 APK
+
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Create local.properties
+      run: echo "sdk.dir=$ANDROID_HOME" > android-app/local.properties
+
+    - name: Make Gradle executable
+      run: chmod +x android-app/gradlew
+
+    - name: Build Debug APK
+      working-directory: android-app
+      run: ./gradlew assembleDebug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: peidubiji-app-debug
+        path: android-app/app/build/outputs/apk/debug/app-debug.apk

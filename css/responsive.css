@@ -1,0 +1,245 @@
+/* responsive.css - 响应式设计 */
+
+/* iPad 优化 (768px - 1024px) */
+@media (max-width: 1024px) {
+  .subject-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .subject-card {
+    padding: 15px;
+  }
+
+  .subject-icon {
+    font-size: 36px;
+  }
+
+  .subject-name {
+    font-size: 18px;
+  }
+
+  .subject-stats {
+    font-size: 13px;
+  }
+
+  button,
+  .btn-primary,
+  .btn-secondary,
+  .option-button {
+    min-height: 44px; /* Apple 推荐最小触控目标 */
+    font-size: 16px;
+  }
+
+  .question-content {
+    font-size: 16px;
+    padding: 20px;
+  }
+
+  .option-button {
+    padding: 12px 15px;
+  }
+}
+
+/* 手机优化 (小于 768px) */
+@media (max-width: 768px) {
+  header {
+    padding: 12px 15px;
+  }
+
+  header h1,
+  header h2 {
+    font-size: 18px;
+  }
+
+  .subject-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .subject-card {
+    padding: 15px;
+  }
+
+  .floating-button {
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+  }
+
+  .exam-timer {
+    font-size: 20px;
+  }
+
+  .exam-progress {
+    font-size: 16px;
+  }
+
+  .question-area {
+    padding: 15px;
+  }
+
+  .question-content {
+    font-size: 16px;
+    padding: 20px;
+  }
+
+  .navigation-buttons {
+    padding: 15px;
+  }
+
+  .result-container {
+    margin: 20px;
+    padding: 30px 20px;
+  }
+
+  .result-score {
+    font-size: 56px;
+  }
+
+  .result-stats {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .result-actions {
+    flex-direction: column;
+  }
+
+  .wrong-questions-list {
+    padding: 15px;
+  }
+
+  .wrong-question-card {
+    padding: 15px;
+  }
+
+  .question-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .import-container,
+  .exam-setup-container,
+  .settings-container {
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+
+  .image-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .preview-thumbnail {
+    height: 100px;
+  }
+
+  .question-navigator {
+    gap: 5px;
+    padding: 15px;
+  }
+
+  .nav-button {
+    width: 35px;
+    height: 35px;
+    font-size: 12px;
+  }
+}
+
+/* 小屏手机 (小于 480px) */
+@media (max-width: 480px) {
+  .subject-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .subject-actions {
+    flex-direction: column;
+  }
+
+  .upload-area {
+    padding: 30px 20px;
+  }
+
+  .question-content {
+    font-size: 15px;
+    padding: 15px;
+  }
+
+  .option-button {
+    font-size: 15px;
+    padding: 12px;
+  }
+}
+
+/* iPad 专属优化 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* 优化触控体验 */
+  button:hover,
+  .option-button:hover {
+    /* iPad 上不使用 hover 效果 */
+  }
+
+  button:active,
+  .option-button:active {
+    transform: scale(0.98);
+  }
+
+  /* 优化滚动 */
+  .page {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+}
+
+/* 横屏优化 */
+@media (orientation: landscape) and (max-height: 500px) {
+  header {
+    position: relative;
+  }
+
+  .question-area {
+    padding: 10px 20px;
+  }
+
+  .question-content {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .navigation-buttons {
+    padding: 10px 20px;
+  }
+}
+
+/* 高分辨率屏幕优化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* 确保文字清晰 */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .page {
+    display: block !important;
+  }
+
+  header,
+  .navigation-buttons,
+  .floating-button {
+    display: none !important;
+  }
+}

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="陪读学习系统">
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>📝 徐爸陪读笔记辅助学习系统</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Dexie.js CDN -->
+  <script src="https://unpkg.com/dexie@3.2.6/dist/dexie.min.js"></script>
+  <!-- Tesseract.js CDN -->
+  <script src="https://unpkg.com/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="app-header">
+    <h1 class="app-title">📝 徐爸陪读笔记</h1>
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="subjects">📚 学科</button>
+      <button class="tab-btn" data-tab="questions">📝 题目</button>
+      <button class="tab-btn" data-tab="exam">✏️ 考试</button>
+      <button class="tab-btn" data-tab="wrong">❌ 错题本</button>
+      <button class="tab-btn" data-tab="settings">⚙️ 设置</button>
+    </nav>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="app-main">
+
+    <!-- ==================== 学科管理视图 ==================== -->
+    <section id="view-subjects" class="view active">
+      <div class="view-header">
+        <h2>学科管理</h2>
+        <button class="btn btn-primary" onclick="showAddSubjectDialog()">＋ 添加学科</button>
+      </div>
+      <div id="subject-list" class="card-grid">
+        <!-- 学科卡片动态生成 -->
+        <div class="empty-state" id="subject-empty">
+          <p>还没有学科，点击上方"添加学科"开始</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 题目管理视图 ==================== -->
+    <section id="view-questions" class="view">
+      <div class="view-header">
+        <h2>题目管理</h2>
+        <div class="header-actions">
+          <select id="question-subject-filter" onchange="loadQuestions()">
+            <option value="">全部学科</option>
+          </select>
+          <button class="btn btn-primary" onclick="showAddQuestionDialog()">＋ 手动输入</button>
+          <button class="btn btn-secondary" onclick="showOCRDialog()">📷 拍照识别</button>
+        </div>
+      </div>
+      <div id="question-list" class="question-list">
+        <div class="empty-state" id="question-empty">
+          <p>还没有题目，请先选择学科并添加题目</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 考试视图 ==================== -->
+    <section id="view-exam" class="view">
+      <!-- 考试设置页 -->
+      <div id="exam-setup">
+        <h2>开始考试</h2>
+        <div class="exam-config">
+          <div class="form-group">
+            <label>选择学科：</label>
+            <select id="exam-subject"></select>
+          </div>
+          <div class="form-group">
+            <label>题目数量：</label>
+            <input type="number" id="exam-count" min="1" max="100" value="10">
+          </div>
+          <div class="form-group">
+            <label>考试时间（分钟，0=不限时）：</label>
+            <input type="number" id="exam-time" min="0" max="180" value="0">
+          </div>
+          <button class="btn btn-primary btn-large" onclick="startExam()">开始答题</button>
+        </div>
+      </div>
+
+      <!-- 考试进行中 -->
+      <div id="exam-playing" style="display:none;">
+        <div class="exam-top-bar">
+          <div class="exam-timer" id="exam-timer">⏱️ 不限时</div>
+          <div class="exam-progress" id="exam-progress">第 1 题 / 共 10 题</div>
+          <button class="btn btn-danger btn-small" onclick="confirmExitExam()">退出考试</button>
+        </div>
+        <div class="exam-question-area" id="exam-question-area">
+          <!-- 题目内容动态生成 -->
+        </div>
+        <div class="exam-nav-buttons">
+          <button class="btn btn-secondary" id="btn-prev" onclick="prevQuestion()">上一题</button>
+          <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()">下一题</button>
+          <button class="btn btn-success" id="btn-submit-exam" onclick="submitExam()" style="display:none;">提交考试</button>
+        </div>
+      </div>
+
+      <!-- 考试结果 -->
+      <div id="exam-result" style="display:none;">
+        <h2>考试结果</h2>
+        <div class="result-card" id="result-card">
+          <!-- 结果动态生成 -->
+        </div>
+        <button class="btn btn-primary" onclick="showExamReview()">查看错题解析</button>
+        <button class="btn btn-secondary" onclick="showView('exam')">返回考试设置</button>
+      </div>
+    </section>
+
+    <!-- ==================== 错题本视图 ==================== -->
+    <section id="view-wrong" class="view">
+      <div class="view-header">
+        <h2>错题本</h2>
+        <div class="header-actions">
+          <select id="wrong-subject-filter" onchange="loadWrongQuestions()">
+            <option value="">全部学科</option>
+          </select>
+          <button class="btn btn-secondary" onclick="clearAllWrong()">清空错题本</button>
+        </div>
+      </div>
+      <div id="wrong-list" class="question-list">
+        <div class="empty-state" id="wrong-empty">
+          <p>还没有错题，继续加油！💪</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 设置视图 ==================== -->
+    <section id="view-settings" class="view">
+      <h2>系统设置</h2>
+      <div class="settings-card">
+        <h3>🤖 AI 记忆辅助（DeepSeek API）</h3>
+        <p class="settings-desc">配置 DeepSeek API Key 后，答错时会自动生成顺口溜帮助记忆。</p>
+        <div class="form-group">
+          <label>API Key：</label>
+          <input type="password" id="setting-api-key" placeholder="sk-..." style="width:100%;max-width:400px;">
+          <button class="btn btn-primary btn-small" onclick="saveApiKey()">保存</button>
+          <button class="btn btn-secondary btn-small" onclick="clearApiKey()">清除</button>
+        </div>
+        <p class="settings-hint">🔒 API Key 仅保存在本机浏览器中，不会上传到任何服务器。</p>
+        <div id="api-status" class="api-status"></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>📊 数据统计</h3>
+        <div id="statistics-content">
+          <!-- 统计数据动态生成 -->
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>📤📥 数据导入导出</h3>
+        <button class="btn btn-secondary" onclick="exportData()">导出所有数据</button>
+        <button class="btn btn-secondary" onclick="importData()">导入数据</button>
+        <p class="settings-hint">定期备份数据，防止丢失。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== 弹窗/对话框 ==================== -->
+
+  <!-- 添加学科弹窗 -->
+  <div id="dialog-add-subject" class="dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <h3>添加学科</h3>
+      <div class="form-group">
+        <label>学科名称：</label>
+        <input type="text" id="input-subject-name" placeholder="例如：数学、语文、英语" maxlength="20">
+      </div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" onclick="hideDialog('dialog-add-subject')">取消</button>
+        <button class="btn btn-primary" onclick="doAddSubject()">确认添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加题目弹窗 -->
+  <div id="dialog-add-question" class="dialog-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <h3>添加题目</h3>
+      <div class="form-group">
+        <label>选择学科：</label>
+        <select id="input-question-subject"></select>
+      </div>
+      <div class="form-group">
+        <label>题目类型：</label>
+        <select id="input-question-type" onchange="onQuestionTypeChange()">
+          <option value="choice">选择题</option>
+          <option value="truefalse">判断题</option>
+          <option value="fillblank">填空题</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>题目内容：</label>
+        <textarea id="input-question-content" rows="3" placeholder="输入题目内容..."></textarea>
+      </div>
+      <!-- 选择题选项 -->
+      <div id="choice-options">
+        <div class="form-group">
+          <label>A. </label>
+          <input type="text" id="input-option-a" placeholder="选项A内容">
+        </div>
+        <div class="form-group">
+          <label>B. </label>
+          <input type="text" id="input-option-b" placeholder="选项B内容">
+        </div>
+        <div class="form-group">
+          <label>C. </label>
+          <input type="text" id="input-option-c" placeholder="选项C内容">
+        </div>
+        <div class="form-group">
+          <label>D. </label>
+          <input type="text" id="input-option-d" placeholder="选项D内容（可选）">
+        </div>
+      </div>
+      <!-- 正确答案 -->
+      <div class="form-group">
+        <label>正确答案：</label>
+        <div id="answer-input-area">
+          <!-- 根据题型动态变化 -->
+          <input type="text" id="input-answer" placeholder="选择题填 A/B/C/D，判断题填 正确/错误">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>解析（可选）：</label>
+        <textarea id="input-question-explanation" rows="2" placeholder="题目解析..."></textarea>
+      </div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" onclick="hideDialog('dialog-add-question')">取消</button>
+        <button class="btn btn-primary" onclick="doAddQuestion()">确认添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OCR 识别弹窗 -->
+  <div id="dialog-ocr" class="dialog-overlay" style="display:none;">
+    <div class="dialog dialog-xlarge">
+      <div class="dialog-header">
+        <h3>📷 拍照识别题目</h3>
+        <button class="dialog-close-btn" onclick="hideDialog('dialog-ocr')" title="关闭">✕</button>
+      </div>
+      <div class="ocr-mode-tabs">
+        <button id="ocr-mode-single" class="ocr-mode-tab" onclick="switchOCRMode('single')">单题模式</button>
+        <button id="ocr-mode-batch" class="ocr-mode-tab active" onclick="switchOCRMode('batch')">📄 整页批量（推荐）</button>
+      </div>
+      <div class="form-group">
+        <label>选择学科：</label>
+        <select id="ocr-subject"></select>
+      </div>
+      <div class="form-group">
+        <input type="file" id="ocr-file-input" accept="image/*" onchange="startBatchOCR()" capture="environment">
+        <label for="ocr-file-input" class="btn btn-secondary">选择图片 / 拍照</label>
+        <span style="margin-left:10px;color:var(--text-secondary);font-size:13px;">可拍整张试卷，AI 自动拆题</span>
+      </div>
+
+      <div id="ocr-preview-area" style="display:none;">
+        <h4>图片预览：</h4>
+        <img id="ocr-preview-img" class="ocr-preview-img">
+        <div class="ocr-progress" id="ocr-progress">
+          <div class="spinner"></div>
+          <p>正在 OCR 识别中，请稍候...</p>
+        </div>
+        <div id="ai-parse-status" style="display:none;padding:10px;background:#f0f9ff;border-radius:8px;margin-bottom:12px;">
+          <div class="spinner" style="display:inline-block;margin-right:8px;width:16px;height:16px;"></div>
+          🤖 AI 正在分析题目结构，拆分中...
+        </div>
+      </div>
+
+      <!-- 单题模式区域 -->
+      <div id="ocr-single-area" style="display:none;">
+        <h4>识别结果（请校对修改）：</h4>
+        <textarea id="ocr-result-text" rows="6" style="width:100%;"></textarea>
+        <div class="form-group">
+          <label>题目类型：</label>
+          <select id="ocr-question-type">
+            <option value="choice">选择题</option>
+            <option value="truefalse">判断题</option>
+            <option value="fillblank">填空题</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>正确答案：</label>
+          <input type="text" id="ocr-answer" placeholder="请输入正确答案">
+        </div>
+        <div class="dialog-buttons">
+          <button class="btn btn-secondary" onclick="hideDialog('dialog-ocr')">取消</button>
+          <button class="btn btn-primary" onclick="doSaveOCRQuestion()">保存题目</button>
+        </div>
+      </div>
+
+      <!-- 整页批量模式区域 -->
+      <div id="ocr-batch-area">
+        <!-- 批量预览区（AI拆题后显示） -->
+        <div id="batch-preview-area" style="display:none;">
+          <div id="batch-summary" style="margin-bottom:12px;color:var(--primary);font-weight:500;"></div>
+          <div id="batch-question-list" style="max-height:50vh;overflow-y:auto;"></div>
+          <div class="dialog-buttons" style="margin-top:16px;">
+            <button class="btn btn-secondary" onclick="hideDialog('dialog-ocr')">取消</button>
+            <button class="btn btn-primary" onclick="doBatchSaveQuestions()">📥 批量保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看题目详情弹窗 -->
+  <div id="dialog-question-detail" class="dialog-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <h3>题目详情</h3>
+      <div id="question-detail-content"></div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" onclick="hideDialog('dialog-question-detail')">关闭</button>
+        <button class="btn btn-danger" id="btn-delete-question">删除题目</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 记忆辅助弹窗 -->
+  <div id="dialog-memory-aid" class="dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <h3>🧠 记忆辅助</h3>
+      <div id="memory-aid-content"></div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" onclick="hideDialog('dialog-memory-aid')">关闭</button>
+        <button class="btn btn-primary" onclick="generateMemoryAid()">重新生成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 导入数据弹窗 -->
+  <div id="dialog-import" class="dialog-overlay" style="display:none;">
+    <div class="dialog">
+      <h3>导入数据</h3>
+      <p>选择之前导出的 JSON 文件进行导入（会合并到现有数据）</p>
+      <div class="form-group">
+        <input type="file" id="import-file-input" accept=".json">
+      </div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" onclick="hideDialog('dialog-import')">取消</button>
+        <button class="btn btn-primary" onclick="doImportData()">开始导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div id="toast" class="toast"></div>
+
+  <!-- 加载 JS 文件 -->
+  <script src="js/storage.js"></script>
+  <script src="js/llm.js"></script>
+  <script src="js/ocr.js"></script>
+  <script src="js/exam.js"></script>
+  <script src="js/import.js"></script>
+  <script src="js/app.js"></script>
+  <!-- Service Worker 注册（PWA离线支持） -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

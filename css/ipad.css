@@ -1,0 +1,190 @@
+/* ipad.css - iPad 专属样式优化 */
+
+/* 针对 iPad 的媒体查询 */
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+  /* 优化触控体验 */
+  button,
+  .option-button,
+  .nav-button,
+  .subject-card,
+  .btn-primary,
+  .btn-secondary {
+    /* 增大触控区域 */
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 移除 hover 效果（iPad 没有 hover） */
+  .subject-card:hover,
+  .option-button:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none;
+    box-shadow: var(--shadow);
+  }
+
+  /* 使用 active 状态代替 hover */
+  .subject-card:active {
+    transform: scale(0.98);
+  }
+
+  .option-button:active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  /* 优化滚动 */
+  .page {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* 防止文本缩放 */
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important; /* 防止 iOS 自动缩放 */
+  }
+
+  /* 优化字体渲染 */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 优化选择框 */
+  select {
+    -webkit-appearance: menulist;
+    appearance: menulist;
+  }
+
+  /* 优化文件上传按钮 */
+  input[type="file"] {
+    font-size: 16px;
+  }
+
+  /* 优化固定定位元素 */
+  .floating-button {
+    bottom: 40px;
+    right: 40px;
+  }
+
+  /* 优化 header */
+  header {
+    padding: 12px 20px;
+  }
+
+  header h1,
+  header h2 {
+    font-size: 22px;
+  }
+
+  /* 优化考试界面 */
+  .exam-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .question-content {
+    font-size: 20px;
+    line-height: 2;
+  }
+
+  .option-button {
+    padding: 18px 24px;
+    font-size: 18px;
+  }
+
+  /* 优化错题本 */
+  .wrong-question-card {
+    padding: 24px;
+  }
+
+  .question-header {
+    font-size: 16px;
+  }
+
+  .aid-content {
+    font-size: 16px;
+    line-height: 2;
+  }
+}
+
+/* 针对 iPad Pro 的优化 */
+@media only screen and (min-device-width: 1024px) and (max-device-width: 1366px) {
+  .subject-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
+  .question-content {
+    font-size: 22px;
+  }
+
+  .option-button {
+    padding: 20px 28px;
+    font-size: 20px;
+  }
+}
+
+/* 横屏模式优化 */
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: landscape) {
+  .subject-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .question-area {
+    max-width: 900px;
+  }
+
+  .exam-header {
+    padding: 10px 20px;
+  }
+
+  .exam-timer {
+    font-size: 20px;
+  }
+}
+
+/* 竖屏模式优化 */
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: portrait) {
+  .subject-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .question-area {
+    max-width: 700px;
+  }
+}
+
+/* 优化 Safari 特有的问题 */
+@supports (-webkit-touch-callout: none) {
+  /* 防止长按弹出菜单 */
+  button,
+  .option-button,
+  .subject-card {
+    -webkit-touch-callout: none;
+  }
+
+  /* 优化滚动 */
+  .page {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 修复 sticky 定位问题 */
+  header,
+  .exam-header {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+}

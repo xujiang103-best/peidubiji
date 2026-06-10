@@ -1,0 +1,28 @@
+{
+  "name": "徐爸陪读笔记辅助学习系统",
+  "short_name": "陪读学习系统",
+  "description": "徐爸陪读笔记 - 多学科随机组卷学习系统，支持拍照识别、AI记忆辅助",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#4f46e5",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
