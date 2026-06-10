@@ -348,10 +348,11 @@ async function clearAllWrong() {
 
 // ==================== 设置 ====================
 async function loadSettings() {
-  // API Key
+  // API Key：APK 内置 Key 作为默认值展示，localStorage 可覆盖
   const savedKey = localStorage.getItem('deepseek_api_key') || '';
-  document.getElementById('setting-api-key').value = savedKey;
-  updateApiStatus(savedKey);
+  const displayKey = savedKey || (window.LLM && window.LLM.BUILTIN_API_KEY) || '';
+  document.getElementById('setting-api-key').value = displayKey;
+  updateApiStatus(displayKey);
 
   // 统计
   await loadStatistics();
@@ -368,8 +369,10 @@ async function saveApiKey() {
   }
   updateApiStatus(key);
 
-  // 同步到 server.js 需要重启服务器，提示用户
-  showToast('⚠️ 请重启 server.js 使 API Key 生效（Ctrl+C 后重新运行 node server.js）');
+  // APK 环境下无需重启服务器；浏览器代理模式才需要
+  if (!window.LLM || !window.LLM.isAPK || !window.LLM.isAPK()) {
+    showToast('⚠️ 请重启 server.js 使 API Key 生效（Ctrl+C 后重新运行 node server.js）');
+  }
 }
 
 function clearApiKey() {
@@ -381,9 +384,10 @@ function clearApiKey() {
 
 function updateApiStatus(key) {
   const el = document.getElementById('api-status');
+  const isAPK = window.LLM && window.LLM.isAPK && window.LLM.isAPK();
   if (key) {
     el.className = 'api-status ok';
-    el.textContent = '✅ API Key 已配置';
+    el.textContent = isAPK ? '✅ API Key 已配置（APK 内置）' : '✅ API Key 已配置';
   } else {
     el.className = 'api-status error';
     el.textContent = '⚠️ 未配置 API Key，记忆辅助功能不可用';

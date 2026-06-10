@@ -5,13 +5,26 @@
  */
 
 const LLM = {
+  // 内置 API Key（APK 打包时直接封装，用户无需手动配置）
+  BUILTIN_API_KEY: 'sk-bf541714fdab4744a9a86f5445ba9e5b',
+
+  /**
+   * 判断当前是否在 Capacitor / APK 环境中
+   */
+  isAPK() {
+    return !!(window.Capacitor || window.CapacitorNative || window.Android);
+  },
+
   /**
    * 判断当前运行环境
    * @returns {string} 'proxy' | 'direct'
    */
   getMode() {
+    // Capacitor / APK 环境强制走直连模式
+    if (this.isAPK()) return 'direct';
+
     const origin = window.location.origin;
-    // file:// 协议 或 http://localhost 且服务器不可达 → 直连模式
+    // file:// 协议 → 直连模式
     if (!origin || origin === 'null' || origin.startsWith('file:')) {
       return 'direct';
     }
@@ -24,20 +37,23 @@ const LLM = {
   getApiBase() {
     const origin = window.location.origin;
     if (!origin || origin === 'null' || origin.startsWith('file:')) {
-      throw new Error('当前为直连模式，无需 API base。请通过 setApiKey() 设置 Key。');
+      throw new Error('当前为直连模式，无需 API base。');
     }
     return origin;
   },
 
   /**
-   * 设置并保存 API Key（直连模式用 localStorage）
+   * 设置并保存 API Key（直连模式用 localStorage，可覆盖内置 Key）
    */
   setApiKey(key) {
     localStorage.setItem('deepseek_api_key', key);
   },
 
+  /**
+   * 获取 API Key：localStorage 优先，否则使用内置 Key
+   */
   getApiKey() {
-    return localStorage.getItem('deepseek_api_key') || '';
+    return localStorage.getItem('deepseek_api_key') || this.BUILTIN_API_KEY || '';
   },
 
   /**
@@ -46,7 +62,7 @@ const LLM = {
   async checkHealth() {
     const mode = this.getMode();
     if (mode === 'direct') {
-      // 直连模式：检查是否有 API Key
+      // 直连模式：有内置 Key 或 localStorage Key 即可
       return !!this.getApiKey();
     }
     try {
