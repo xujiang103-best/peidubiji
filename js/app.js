@@ -518,6 +518,7 @@ async function loadStatistics() {
 async function fillSubjectSelect(selectId) {
   const subjects = await window.ExamDB.getAllSubjects();
   const sel = document.getElementById(selectId);
+  const currentVal = sel.value;  // 保存当前选中值
   sel.innerHTML = '';
   subjects.forEach(s => {
     const opt = document.createElement('option');
@@ -525,6 +526,10 @@ async function fillSubjectSelect(selectId) {
     opt.textContent = s.name;
     sel.appendChild(opt);
   });
+  // 恢复之前选中的值（如果还存在的话）
+  if (currentVal && subjects.some(s => String(s.id) === currentVal)) {
+    sel.value = currentVal;
+  }
 }
 
 // 填充学科过滤下拉（含"全部"选项）
