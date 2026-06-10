@@ -79,7 +79,7 @@ const LLM = {
    * 调用 DeepSeek API（自动选择模式）
    */
   async callAPI(messages, options = {}) {
-    const { model = 'deepseek-chat', temperature = 0.7, max_tokens = 500 } = options;
+    const { model = this.MODEL, temperature = 0.7, max_tokens = 500 } = options;
     const mode = this.getMode();
 
     if (mode === 'direct') {
@@ -103,7 +103,7 @@ const LLM = {
    * 直连 DeepSeek API（APK / file:// 环境）
    */
   async callAPIDirect(messages, options = {}) {
-    const { model = 'deepseek-chat', temperature = 0.7, max_tokens = 500 } = options;
+    const { model = this.MODEL, temperature = 0.7, max_tokens = 500 } = options;
     const apiKey = this.getApiKey();
     if (!apiKey) throw new Error('请先在"记忆辅助"页面配置 DeepSeek API Key');
 
@@ -122,24 +122,33 @@ const LLM = {
   },
 
   /**
-   * 系统提示词 — 夸张画面记忆法
-   * 只输出一个极度夸张、离谱的大脑画面，100 字以内
+   * 系统提示词 — 趣味记忆法（顺口溜 / 谐音梗 / 荒诞故事）
+   * 只输出一段有记忆点的内容，100 字以内，绝不重复相同套路
    */
-  MEMORY_SYSTEM_PROMPT: `你是一个擅长用夸张画面帮初中生记忆知识点的老师。
+  MEMORY_SYSTEM_PROMPT: `你是一个专门帮初中生记住知识点的趣味老师，擅长用奇葩方式让知识忘不掉。
 
-给你一道错题，请你把正确答案转化成一个极度夸张、离谱、有画面感的大脑场景。
+给你一道错题的正确答案，你需要把它变成一段有强烈记忆点的描述，100 字以内。
+
+风格随机选择（每次换一种，不要千篇一律）：
+- 顺口溜 / 押韵口诀：朗朗上口，像儿歌一样容易哼
+- 谐音梗 / 同音字联想：用发音相近的词制造笑点
+- 荒诞故事 / 离谱场景：把知识点变成一个夸张到荒谬的画面
+- 冷笑话 / 脑筋急转弯：让知识变成一句让人翻白眼又忘不掉的话
+- 生活类比：用日常生活中的搞笑场景来对应
 
 规则：
-- 只输出一段纯文字描述，不超过 100 字
-- 如果只有一个知识点 → 输出一个夸张的画面场景
-- 如果有多个关联知识点 → 把它们串成一个荒诞短故事或一句押韵口诀
-- 画面越离谱越好记，但知识点必须准确
-- 不要标题、标签、序号、emoji、markdown 格式等任何多余内容
-- 不要写"画面""场景""想象"等引导词，直接描绘
+- 只输出一段纯文字，不超过 100 字
+- 同一道题每次都变花样，不要老用同一种风格
+- 不准出现"龙""巨龙""金龙""神龙"相关元素
+- 不要标题、标签、序号、emoji、markdown
+- 不要"画面""想象"等引导词，直接给答案
 
-示例（一模一样的风格）：
-"秦始皇变成一座巨型兵马俑机器人，举着'统一'大旗，一脚把六国旗帜踩碎，大吼：书同文车同轨！"
-"氯化钠和硝酸银在舞池相遇，突然抱在一起变成白色沉淀，围观的水分子全被弹飞！"`,
+好例子：
+"氯化银是白色沉淀，记住：滤（氯）纸（质）白，银（银）白。硝酸银遇到氯离子就像遇到'老婆'，立刻'白头偕老'！"
+"秦岭淮河分南北，口诀：秦（琴）岭（领）淮（坏）河（盒），琴坏了装盒子里，南北分界线一把抓。"
+"勾股定理 a²+b²=c²：勾三股四弦五，就像三条边手拉手围成一个直角框，3²+4²=9+16=25=5²！"`,
+
+  MODEL: 'deepseek-v4-pro',
 
   /**
    * 为错题生成夸张画面记忆（纯文本，100字内）
@@ -148,7 +157,7 @@ const LLM = {
     const userPrompt = `题目：${question}
 正确答案：${answer}${explanation ? `\n解析：${explanation}` : ''}
 
-请把正确答案变成一个夸张画面或短故事，越离谱越好：`;
+请把正确答案变成一个有趣的记忆方法（顺口溜/谐音梗/荒诞故事/冷笑话任选一种）：`;
 
     return await this.callAPI([
       { role: 'system', content: this.MEMORY_SYSTEM_PROMPT },
