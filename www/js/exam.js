@@ -322,16 +322,29 @@ const Exam = {
   },
 
   /**
-   * 为错题生成记忆辅助
+   * 为错题生成记忆辅助（仅首次生成，后续复用缓存）
    */
   async generateMemoryAids(wrongIds) {
     const apiKey = localStorage.getItem('deepseek_api_key');
     if (!apiKey) return; // 未配置 API，跳过
 
-    showToast('正在为错题生成记忆辅助，请稍候...');
+    let newCount = 0;
+    let skipCount = 0;
 
     for (const qId of wrongIds) {
       try {
+        // 先查错题记录，看是否已有记忆辅助
+        const wrong = await window.ExamDB.db.wrongQuestions
+          .where({ questionId: qId })
+          .first();
+        if (!wrong) continue;
+
+        // 已有记忆辅助 → 直接复用，不再重新生成
+        if (wrong.memoryAid && wrong.memoryAid.trim()) {
+          skipCount++;
+          continue;
+        }
+
         const q = await window.ExamDB.db.questions.get(qId);
         if (!q) continue;
 
@@ -341,19 +354,21 @@ const Exam = {
           q.explanation
         );
 
-        // 找到错题记录并更新
-        const wrong = await window.ExamDB.db.wrongQuestions
-          .where({ questionId: qId })
-          .first();
-        if (wrong) {
-          await window.ExamDB.updateMemoryAid(wrong.id, memoryAid.trim());
-        }
+        await window.ExamDB.updateMemoryAid(wrong.id, memoryAid.trim());
+        newCount++;
       } catch (err) {
         console.warn('生成记忆辅助失败：', err.message);
       }
     }
 
-    showToast('记忆辅助生成完成！可前往错题本查看。');
+    if (newCount > 0) {
+      const msg = skipCount > 0
+        ? `记忆辅助：${newCount} 道新生成，${skipCount} 道复用已有`
+        : `记忆辅助生成完成！可前往错题本查看。`;
+      showToast(msg);
+    } else if (skipCount > 0) {
+      showToast(`${skipCount} 道错题已有记忆辅助，无需重新生成。`);
+    }
   },
 
   /**
