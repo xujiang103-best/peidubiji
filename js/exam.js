@@ -293,11 +293,19 @@ const Exam = {
     // 显示结果
     this.showResult(score, wrongIds);
 
-    // 为错题生成记忆辅助（等待完成，然后弹窗展示）
+    // 为错题生成记忆辅助（等待完成，然后弹窗展示 + 页面内嵌）
     if (wrongIds.length > 0) {
-      const results = await this.generateMemoryAids(wrongIds);
-      if (results && results.length > 0) {
-        showExamMemoryAids(results);
+      try {
+        const results = await this.generateMemoryAids(wrongIds);
+        if (results && results.length > 0) {
+          renderMemoryAidsInline(results);
+          showExamMemoryAids(results);
+        } else {
+          console.log('generateMemoryAids returned empty results');
+        }
+      } catch (err) {
+        console.error('generateMemoryAids/showExamMemoryAids failed:', err);
+        showToast('记忆辅助生成失败：' + err.message, 3000);
       }
     }
 

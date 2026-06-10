@@ -595,20 +595,60 @@ document.addEventListener('change', (e) => {
  * 考试提交后，在弹窗中展示所有错题的 AI 记忆辅助
  * @param {Array} aids - [{ questionContent, answer, memoryAid, cached }]
  */
-function showExamMemoryAids(aids) {
-  let html = '<div class="memory-aids-list">';
+/**
+ * 在考试结果卡片内直接渲染记忆辅助内容（保底方案，对话框出不来也能看到）
+ * @param {Array} aids - [{ questionContent, answer, memoryAid, cached }]
+ */
+function renderMemoryAidsInline(aids) {
+  if (!aids || aids.length === 0) return;
+  const card = document.getElementById('result-card');
+  if (!card) return;
+
+  let html = '<div style="margin-top:20px;text-align:left;"><h3 style="font-size:16px;margin-bottom:12px;color:#4f46e5;">🧠 AI 记忆辅助</h3><div class="memory-aids-list">';
   aids.forEach((a, i) => {
+    const content = a.questionContent || '';
+    const answer = a.answer || '';
+    const aid = a.memoryAid || '';
     const tag = a.cached ? '' : ' <span style="font-size:11px;background:#4f46e5;color:#fff;padding:1px 6px;border-radius:4px;">新生成</span>';
     html += `
       <div class="memory-aid-item">
-        <div class="ma-question">${i + 1}. ${escapeHtml(a.questionContent.substring(0, 60))}${a.questionContent.length > 60 ? '...' : ''}${tag}</div>
-        <div class="ma-answer">✅ 答案：${escapeHtml(a.answer)}</div>
-        <div class="ma-aid">🧠 ${escapeHtml(a.memoryAid).replace(/\n/g, '<br>')}</div>
+        <div class="ma-question">${i + 1}. ${escapeHtml(content.substring(0, 60))}${content.length > 60 ? '...' : ''}${tag}</div>
+        <div class="ma-answer">✅ 答案：${escapeHtml(answer)}</div>
+        <div class="ma-aid">🧠 ${escapeHtml(aid).replace(/\\n/g, '<br>')}</div>
+      </div>
+    `;
+  });
+  html += '</div></div>';
+  card.insertAdjacentHTML('beforeend', html);
+}
+
+function showExamMemoryAids(aids) {
+  if (!aids || aids.length === 0) return;
+
+  const contentEl = document.getElementById('memory-aid-content');
+  const dialogEl = document.getElementById('dialog-memory-aid');
+  if (!contentEl || !dialogEl) {
+    console.error('dialog-memory-aid or memory-aid-content not found in DOM');
+    return;
+  }
+
+  let html = '<div class="memory-aids-list">';
+  aids.forEach((a, i) => {
+    const content = a.questionContent || '';
+    const answer = a.answer || '';
+    const aid = a.memoryAid || '';
+    const tag = a.cached ? '' : ' <span style="font-size:11px;background:#4f46e5;color:#fff;padding:1px 6px;border-radius:4px;">新生成</span>';
+
+    html += `
+      <div class="memory-aid-item">
+        <div class="ma-question">${i + 1}. ${escapeHtml(content.substring(0, 60))}${content.length > 60 ? '...' : ''}${tag}</div>
+        <div class="ma-answer">✅ 答案：${escapeHtml(answer)}</div>
+        <div class="ma-aid">🧠 ${escapeHtml(aid).replace(/\\n/g, '<br>')}</div>
       </div>
     `;
   });
   html += '</div>';
 
-  document.getElementById('memory-aid-content').innerHTML = html;
-  document.getElementById('dialog-memory-aid').style.display = 'flex';
+  contentEl.innerHTML = html;
+  dialogEl.style.display = 'flex';
 }
