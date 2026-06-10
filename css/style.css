@@ -561,6 +561,118 @@ body {
   margin-bottom: 8px;
 }
 
+/* === 考试记录列表 === */
+.record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record-item {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.record-item:active {
+  background: var(--bg);
+}
+
+.record-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-subject {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.record-time {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.record-score {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-score .score-num {
+  font-size: 17px;
+}
+
+.record-score .score-pct {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* === 考试详情弹窗 === */
+.exam-detail-q {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.exam-detail-q.detail-correct {
+  background: #F6FFED;
+  border-color: #B7EB8F;
+}
+
+.exam-detail-q.detail-wrong {
+  background: #FFF2F0;
+  border-color: #FFCCC7;
+}
+
+.detail-q-num {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.exam-detail-q.detail-correct .detail-q-num {
+  color: var(--success);
+}
+
+.exam-detail-q.detail-wrong .detail-q-num {
+  color: var(--danger);
+}
+
+.detail-q-content {
+  font-size: 14px;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.detail-answers {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.detail-user-ans {
+  color: var(--text-secondary);
+}
+
+.detail-correct-ans {
+  color: var(--success);
+  margin-left: 12px;
+}
+
+.detail-explanation {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
 /* === 错题本 === */
 .wrong-item {
   background: var(--card-bg);

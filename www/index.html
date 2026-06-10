@@ -25,6 +25,7 @@
       <button class="tab-btn active" data-tab="subjects">📚 学科</button>
       <button class="tab-btn" data-tab="questions">📝 题目</button>
       <button class="tab-btn" data-tab="exam">✏️ 考试</button>
+      <button class="tab-btn" data-tab="records">📋 记录</button>
       <button class="tab-btn" data-tab="wrong">❌ 错题本</button>
       <button class="tab-btn" data-tab="settings">⚙️ 设置</button>
     </nav>
@@ -113,6 +114,18 @@
         </div>
         <button class="btn btn-primary" onclick="showExamReview()">查看错题解析</button>
         <button class="btn btn-secondary" onclick="backToExamSetup()">返回考试设置</button>
+      </div>
+    </section>
+
+    <!-- ==================== 考试记录视图 ==================== -->
+    <section id="view-records" class="view">
+      <div class="view-header">
+        <h2>考试记录</h2>
+      </div>
+      <div id="record-list" class="record-list">
+        <div class="empty-state" id="record-empty">
+          <p>还没有考试记录，去考一场吧！✏️</p>
+        </div>
       </div>
     </section>
 
@@ -321,6 +334,21 @@
       <div class="dialog-buttons">
         <button class="btn btn-secondary" onclick="hideDialog('dialog-question-detail')">关闭</button>
         <button class="btn btn-danger" id="btn-delete-question">删除题目</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 考试结果详情弹窗 -->
+  <div id="dialog-exam-detail" class="dialog-overlay" style="display:none;">
+    <div class="dialog dialog-large">
+      <div class="dialog-header">
+        <h3>📋 考试结果详情</h3>
+        <button class="dialog-close-btn" onclick="hideDialog('dialog-exam-detail')" title="关闭">✕</button>
+      </div>
+      <div id="exam-detail-summary" style="text-align:center;margin-bottom:16px;"></div>
+      <div id="exam-detail-questions" style="max-height:55vh;overflow-y:auto;"></div>
+      <div class="dialog-buttons">
+        <button class="btn btn-secondary" onclick="hideDialog('dialog-exam-detail')">关闭</button>
       </div>
     </div>
   </div>

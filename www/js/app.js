@@ -25,6 +25,7 @@ function showView(viewName) {
   // 进入视图时刷新数据
   if (viewName === 'subjects') loadSubjects();
   if (viewName === 'questions') loadQuestions();
+  if (viewName === 'records') loadExamRecords();
   if (viewName === 'wrong') loadWrongQuestions();
   if (viewName === 'settings') loadSettings();
   if (viewName === 'exam') loadExamSetup();
@@ -279,6 +280,100 @@ function backToExamSetup() {
   loadExamSetup();
 }
 
+// ==================== 考试记录 ====================
+async function loadExamRecords() {
+  const records = await window.ExamDB.getExamRecords();
+  const subjects = await window.ExamDB.getAllSubjects();
+  const subjectMap = {};
+  subjects.forEach(s => { subjectMap[s.id] = s.name; });
+
+  const list = document.getElementById('record-list');
+  const empty = document.getElementById('record-empty');
+
+  list.querySelectorAll('.record-item').forEach(el => el.remove());
+
+  if (records.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  for (const r of records) {
+    const pct = Math.round(r.score / r.totalQuestions * 100);
+    const color = pct >= 90 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+
+    const item = document.createElement('div');
+    item.className = 'record-item';
+    item.innerHTML = `
+      <div class="record-info">
+        <div class="record-subject">📚 ${escapeHtml(subjectMap[r.subjectId] || '未知学科')}</div>
+        <div class="record-time">🕐 ${formatDateTime(r.date)}</div>
+        <div class="record-score" style="color:${color}">
+          <span class="score-num">${r.score}/${r.totalQuestions}</span>
+          <span class="score-pct">（${pct}分）</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-small" onclick="viewExamDetail(${r.id})">查看详情</button>
+    `;
+    list.appendChild(item);
+  }
+}
+
+async function viewExamDetail(recordId) {
+  const record = await window.ExamDB.db.examRecords.get(recordId);
+  if (!record) return showToast('记录不存在');
+
+  const subjects = await window.ExamDB.getAllSubjects();
+  const subjectMap = {};
+  subjects.forEach(s => { subjectMap[s.id] = s.name; });
+
+  const pct = Math.round(record.score / record.totalQuestions * 100);
+  const color = pct >= 90 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+
+  // 摘要
+  document.getElementById('exam-detail-summary').innerHTML = `
+    <div style="font-size:16px;font-weight:600;">${escapeHtml(subjectMap[record.subjectId] || '未知')}</div>
+    <div style="color:var(--text-secondary);">${formatDateTime(record.date)}</div>
+    <div class="result-score" style="font-size:48px;color:${color};">${pct}分</div>
+    <div>答对 ${record.score} / ${record.totalQuestions} 题</div>
+  `;
+
+  // 每题详情
+  const questionIds = JSON.parse(record.questions);
+  const userAnswers = JSON.parse(record.answers);
+  const typeLabels = { choice: '选择题', truefalse: '判断题', fillblank: '填空题' };
+
+  let html = '';
+  for (let i = 0; i < questionIds.length; i++) {
+    const q = await window.ExamDB.db.questions.get(questionIds[i]);
+    if (!q) continue;
+    const userAns = userAnswers[i] || '';
+    const correctAns = q.answer;
+    const isCorrect = userAns.trim().toLowerCase() === correctAns.trim().toLowerCase();
+
+    html += `<div class="exam-detail-q ${isCorrect ? 'detail-correct' : 'detail-wrong'}">`;
+    html += `<div class="detail-q-num">第 ${i + 1} 题 · ${typeLabels[q.type] || q.type} ${isCorrect ? '✅' : '❌'}</div>`;
+    html += `<div class="detail-q-content">${escapeHtml(q.content).substring(0, 120)}</div>`;
+    if (q.image) {
+      html += `<img class="q-image" src="${q.image}" alt="题目图片" style="max-width:200px;">`;
+    }
+    html += `<div class="detail-answers">`;
+    html += `<span class="detail-user-ans">你的答案：<strong>${escapeHtml(userAns || '未作答')}</strong></span>`;
+    if (!isCorrect) {
+      html += ` <span class="detail-correct-ans">正确答案：<strong>${escapeHtml(correctAns)}</strong></span>`;
+    }
+    html += `</div>`;
+    if (!isCorrect && q.explanation) {
+      html += `<div class="detail-explanation">💡 ${escapeHtml(q.explanation)}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById('exam-detail-questions').innerHTML = html;
+  document.getElementById('dialog-exam-detail').style.display = 'flex';
+}
+
 // ==================== 错题本 ====================
 async function loadWrongQuestions() {
   await fillSubjectFilter('wrong-subject-filter');
@@ -473,6 +568,13 @@ function formatDate(isoString) {
   if (!isoString) return '';
   const d = new Date(isoString);
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function formatDateTime(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 // 考试学科下拉变化时更新题目数量上限
