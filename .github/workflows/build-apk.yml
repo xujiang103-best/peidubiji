@@ -1,4 +1,4 @@
-# Android WebView APK 构建工作流
+# Capacitor Android APK 构建工作流
 # 推送到 GitHub 后，进入 Actions 标签下载 APK
 
 name: Build Android APK
@@ -25,18 +25,25 @@ jobs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Create local.properties
-      run: echo "sdk.dir=$ANDROID_HOME" > android-app/local.properties
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
 
-    - name: Make Gradle executable
-      run: chmod +x android-app/gradlew
+    - name: Install dependencies
+      run: npm install
+
+    - name: Sync Capacitor (copy web assets to Android)
+      run: npx cap sync android
 
     - name: Build Debug APK
-      working-directory: android-app
-      run: ./gradlew assembleDebug
+      working-directory: android
+      run: |
+        chmod +x gradlew
+        ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: peidubiji-app-debug
-        path: android-app/app/build/outputs/apk/debug/app-debug.apk
+        name: peidubiji-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
