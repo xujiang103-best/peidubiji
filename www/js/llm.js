@@ -122,74 +122,54 @@ const LLM = {
   },
 
   /**
-   * 系统提示词 — 记忆故事法（打包自 peidu.md）
-   * 原则：越夸张越好记，离谱但知识点不能错
+   * 系统提示词 — 夸张画面记忆法
+   * 只输出一个极度夸张、离谱的大脑画面，100 字以内
    */
-  MEMORY_STORY_SYSTEM_PROMPT: `你是一名擅长"记忆故事法"的初中历史、地理、生物和政治老师。
+  MEMORY_SYSTEM_PROMPT: `你是一个擅长用夸张画面帮初中生记忆知识点的老师。
 
-我会给你一道孩子做错的题，请你不要直接讲大道理，而是按下面流程帮孩子记住：
+给你一道错题，请你把正确答案转化成一个极度夸张、离谱、有画面感的大脑场景。
 
-1. 先判断这道题的考点是什么。
-2. 分析孩子可能为什么会错：是概念混淆、顺序记错、地点记错、因果关系没搞清，还是关键词没有画面。
-3. 把正确答案拆成几个关键词。
-4. 给每个关键词设计一个非常夸张、离谱、好笑、有画面感的角色、动作或场景。
-5. 把这些关键词串成一个短故事，故事要让孩子一听就忘不掉。
-6. 如果有容易混淆的错误答案，要在故事里专门安排一个"被赶走/被拦下/被打脸"的情节，帮助孩子排除错误选项。
-7. 最后输出一句简短口诀，帮助孩子快速回忆。
-8. 再给孩子一个"闭眼复述问题"，让孩子马上回忆这个画面。
+规则：
+- 只输出一段纯文字描述，不超过 100 字
+- 如果只有一个知识点 → 输出一个夸张的画面场景
+- 如果有多个关联知识点 → 把它们串成一个荒诞短故事或一句押韵口诀
+- 画面越离谱越好记，但知识点必须准确
+- 不要标题、标签、序号、emoji、markdown 格式等任何多余内容
+- 不要写"画面""场景""想象"等引导词，直接描绘
 
-要求：
-- 面向初中生，语言要简单、有趣，不要太幼稚。
-- 故事可以夸张，但不能胡编知识点。
-- 每个夸张元素必须和正确答案有明确对应关系。
-- 不要写太长，控制在300字以内。
-- 最后必须回到标准答案。
-
-必须严格按照以下格式输出，不要添加其他内容：
-
-【考点】
-……
-
-【错因】
-……
-
-【💥 夸张故事】
-……
-
-【🔗 记忆锚点】
-（列出故事中的每个夸张元素和正确答案的对应关系）
-
-【📢 口诀】
-……
-
-【👁️ 闭眼回忆】
-……`,
+示例（一模一样的风格）：
+"秦始皇变成一座巨型兵马俑机器人，举着'统一'大旗，一脚把六国旗帜踩碎，大吼：书同文车同轨！"
+"氯化钠和硝酸银在舞池相遇，突然抱在一起变成白色沉淀，围观的水分子全被弹飞！"`,
 
   /**
-   * 使用「记忆故事法」为错题生成夸张记忆辅助
-   * @param {string} question - 题目内容（含选项）
-   * @param {string} answer - 正确答案
-   * @param {string} explanation - 题目解析（可选）
-   * @returns {Promise<string>} 结构化记忆辅助
+   * 为错题生成夸张画面记忆（纯文本，100字内）
    */
-  async generateExaggeratedStory(question, answer, explanation = '') {
+  async generateMemoryAid(question, answer, explanation = '') {
     const userPrompt = `题目：${question}
 正确答案：${answer}${explanation ? `\n解析：${explanation}` : ''}
 
-请用「记忆故事法」帮孩子记住这道题的正确答案。记住：越夸张越离谱越好，但知识点必须准确！`;
+请把正确答案变成一个夸张画面或短故事，越离谱越好：`;
 
     return await this.callAPI([
-      { role: 'system', content: this.MEMORY_STORY_SYSTEM_PROMPT },
+      { role: 'system', content: this.MEMORY_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt }
-    ], { temperature: 0.9, max_tokens: 1200 });
+    ], { temperature: 0.95, max_tokens: 300 });
   },
 
   /**
-   * 通用：生成记忆辅助（夸张故事 + 记忆锚点 + 口诀 + 闭眼回忆）
+   * 生成配图提示词（用于后续漫画生成）
    */
-  async generateMemoryAid(question, answer, explanation = '') {
-    const result = await this.generateExaggeratedStory(question, answer, explanation);
-    return result.trim();
+  async generateImagePrompt(question, answer) {
+    const prompt = `请为以下知识点的夸张记忆画面，写一个适合 AI 绘画的英文 prompt（manga/comic style, vivid, exaggerated, educational）：
+
+题目：${question}
+答案：${answer}
+
+只输出英文 prompt，不超过 50 个单词，不要任何解释。`;
+
+    return await this.callAPI([
+      { role: 'user', content: prompt }
+    ], { temperature: 0.7, max_tokens: 150 });
   }
 };
 

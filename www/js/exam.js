@@ -335,7 +335,7 @@ const Exam = {
         const q = await window.ExamDB.db.questions.get(qId);
         if (!q) continue;
 
-        const memoryAid = await LLM.generateMnemonics(
+        const memoryAid = await LLM.generateMemoryAid(
           q.content,
           q.answer,
           q.explanation

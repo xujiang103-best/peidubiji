@@ -273,6 +273,12 @@ async function loadExamSetup() {
   }
 }
 
+/** 考试结果页「返回考试设置」按钮：重置考试内部状态并刷新设置 */
+function backToExamSetup() {
+  Exam.exit();
+  loadExamSetup();
+}
+
 // ==================== 错题本 ====================
 async function loadWrongQuestions() {
   await fillSubjectFilter('wrong-subject-filter');
